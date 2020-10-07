@@ -1,20 +1,10 @@
-#MiniMap
+# Minimap
 
-Adds a minimap to get an overview
+This plugin creates a minimap to get a quick overview of code within the [Atheos](http://www.atheos.io) IDE.
 
-#Channellog
-- Rewritten, changed logic
+# Installation
 
-#Read First
-Not perfect. If you test it, please write me your experience.
-
-##Installation
-
-- Download the zip file and unzip it to your plugin folder.
-
-##Example
-
-![Example](http://andrano.de/Plugins/img/minimap.png "Example")
+Please utilize the Atheos Marketplace for installation. In order to manually install, unzip the repository into your plugins direcotry and ensure the folder is named "Minimap".
 
 #Credits
-- [Prism.js](http://prismjs.com/) released under [MIT License](https://github.com/LeaVerou/prism/blob/gh-pages/LICENSE)
+- [Lolight.js](https://github.com/lrsjng/lolight) released under MIT License

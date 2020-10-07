@@ -1,116 +1,131 @@
-/*jshint browser:true*/
-/*
-* Copyright (c) Codiad & Andr3as, distributed
-* as-is and without warranty under the MIT License.
-* See http://opensource.org/licenses/MIT for more information.
-* This information must remain intact.
-*/
+//////////////////////////////////////////////////////////////////////////////80
+// Atheos MiniMap
+//////////////////////////////////////////////////////////////////////////////80
+// Copyright (c) 2020 Liam Siira (liam@siira.io), distributed as-is and without
+// warranty under the MIT License. See [root]/license.md for more.
+// This information must remain intact.
+//////////////////////////////////////////////////////////////////////////////80
+// Copyright (c) 2013 Codiad & Anr3as
+// Source: https://github.com/Andr3as/Codiad-Minimap
+//////////////////////////////////////////////////////////////////////////////80
 
-(function(global, $){
+(function(global) {
 
-    var codiad  = global.codiad,
-        scripts = document.getElementsByTagName('script'),
-        path    = scripts[scripts.length-1].src.split('?')[0],
-        curpath = path.split('/').slice(0, -1).join('/')+'/';
+	var atheos = global.atheos,
+		amplify = global.amplify;
 
-    $(function() {
-        codiad.MiniMap.init();
-    });
+	amplify.subscribe('system.loadExtra', () => atheos.MiniMap.init());
 
-    codiad.MiniMap = {
+	var self = null;
 
-        path        : curpath,
-        worker      : true,
-        changeNumber: null,
-        scrollNumber: null,
-        template    : "",
+	atheos.MiniMap = {
 
-        init: function() {
-            var _this = this;
-            $.get(this.path+"template.html", function(data){
-                _this.template = data;
-                $('#editor-top-bar').before(data);
-            });
-            //Get worker
-            this.worker = new Worker(this.path+'worker.js');
-            this.worker.addEventListener('message', this.getWorkerResult.bind(this));
-            //Render canvas
-            amplify.subscribe("active.onFocus", function(path){
-                _this.updateMap();
-            });
-            //document on change listener
-            amplify.subscribe("active.onOpen", function(path){
-                var session = codiad.editor.getActive().getSession();
-                session.on('changeScrollTop', function(scrollTop){
-                    //Changed scrolling
-                    if (_this.scrollNumber === null) {
-                        _this.scrollNumber = setTimeout(function(){
-                            _this.scrollNumber = null;
-                            _this.colorLines();
-                        }, 50);
-                    }
-                    _this.colorLines();
-                });
-                session.on('change', function(e){
-                    if (_this.changeNumber === null) {
-                        _this.changeNumber = setTimeout(function(){
-                            _this.changeNumber = null;
-                        }, 2000);
-                        //Update canvas
-                        _this.updateMap();
-                    }
-                });
-            });
-            //Reset Canvas
-            amplify.subscribe("active.onClose", function(path){
-                _this.resetMap();
-            });
-            amplify.subscribe("active.onRemoveAll", function(){
-                _this.resetMap();
-            });
-            //Click listener
-            $('.minimap pre').live('click', function(e){
-                var y = e.pageY;
-                var offset  = $('.minimap pre').offset().top;
-                var height  = $('.minimap pre').height();
-                var length  = codiad.editor.getActive().getSession().getLength();
-                var line    =  Math.floor((y-offset) / (height / length));
-                codiad.editor.gotoLine(line);
-                _this.updateMap();
-            });
-        },
+		path: atheos.path + 'plugins/Minimap/',
+		worker: null,
+		template: `<div id="minimap"><div class="overlay"></div><pre><code></code></pre></div>`,
 
-        updateMap: function() {
-            var mode    = $('#current-mode').text();
-            var code    = codiad.editor.getContent();
-            $('.minimap .code').removeClass().addClass('code language-' + mode);
-            this.worker.postMessage({code: code, mode: mode});
-        },
+		cache: {},
 
-        getWorkerResult: function(e) {
-            $('.minimap .code').html(e.data.code);
-            this.colorLines();
-        },
+		overlay: null,
+		code: null,
+		pre: null,
 
-        colorLines: function() {
-            var first   = codiad.editor.getActive().renderer.getFirstFullyVisibleRow() + 1;
-            var last    = codiad.editor.getActive().renderer.getLastFullyVisibleRow() + 1;
-            var lines   = last - first;
-            var height  = $('.minimap pre').height();
-            var length  = codiad.editor.getActive().getSession().getLength();
-            var size    = height / length * lines;
-            var offset  = height / length * first;
-            $('.minimap .background').css('height', size + "px");
-            $('.minimap .background').css('margin-top', offset + "px");
-        },
+		active: null,
+		activePath: null,
 
-        resetMap: function(){
-            $('.minimap').replaceWith(this.template);
-            $('.minimap .background').css('height', 0);
-        },
+		init: function() {
+			self = this;
+			oX('#editor-top-bar').before(self.template);
 
-        getExtension: function(path) {
-            return path.substring(path.lastIndexOf(".")+1);
-        }
-    };
-})(this, jQuery);
+			self.overlay = oX('#minimap .overlay');
+			self.code = oX('#minimap code');
+			self.pre = oX('#minimap pre');
+
+			//Get worker
+			self.worker = new Worker(self.path + 'worker.js');
+			self.worker.addEventListener('message', self.getWorkerResult);
+
+			self.throttleChange = throttle(self.createMap, 5000, self);
+			self.throttleScroll = throttle(self.moveOverlay, 100, self);
+
+			//document on change listener
+			amplify.subscribe("active.focus", function(path) {
+				self.active = atheos.editor.getActive();
+				if (!self.active) return;
+
+				if (path !== self.activePath) {
+					self.activePath = path;
+					self.createMap(path);
+					var session = self.active.getSession();
+					session.on('change', self.throttleChange);
+					session.on('changeScrollTop', self.throttleScroll);
+				}
+			});
+
+			//Reset Canvas
+			amplify.subscribe("active.close, active.removeAll", function(path) {
+				self.resetMap();
+			});
+
+			//Click listener
+			oX('#minimap pre', true).on('click', function(e) {
+				if (!self.active) return;
+				var y = e.pageY;
+				var offset = self.pre.offset().top;
+				var line = Math.floor((y - offset) / (self.height / self.length));
+				atheos.editor.gotoLine(line);
+			});
+		},
+
+		createMap: function(path) {
+			if (path in self.cache) {
+				self.render(self.cache[path]);
+				return;
+			}
+			var code = atheos.editor.getContent();
+			self.worker.postMessage({
+				code
+			});
+		},
+
+		getWorkerResult: function(e) {
+			self.cache[self.activePath] = e.data.code;
+			self.render(e.data.code);
+		},
+
+		render: function(html) {
+			self.code.html(html);
+
+			self.height = self.pre.height();
+			self.length = self.active.getSession().getLength();
+
+			self.moveOverlay(true);
+		},
+
+		lines: 0,
+		size: 0,
+		length: 0,
+		height: 0,
+
+		moveOverlay: function(build) {
+			var first = self.active.renderer.getFirstFullyVisibleRow() - 1;
+			if (build) {
+				var last = self.active.renderer.getLastFullyVisibleRow() + 1;
+				self.lines = last - first;
+				self.size = self.height / self.length * self.lines;
+				self.overlay.css('height', self.size + "px");
+			}
+			var offset = self.height / self.length * first;
+			self.overlay.css('margin-top', offset + "px");
+		},
+
+		resetMap: function() {
+			self.code.empty();
+			self.overlay.css('height', 0);
+
+			self.active = null;
+			self.length = 0;
+			self.height = 0;
+		}
+	};
+})(this);

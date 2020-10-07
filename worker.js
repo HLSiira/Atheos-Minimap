@@ -5,15 +5,11 @@
 * See http://opensource.org/licenses/MIT for more information.
 * This information must remain intact.
 */
-importScripts('prism.js');
+importScripts('lumin.js');
 
 self.addEventListener('message', function(e) {
     var code = e.data.code;
-    var mode = e.data.mode;
-    //Run prism.js
-    if (Prism.languages[mode] !== undefined) {
-        code = Prism.highlight(code, Prism.languages[mode]);
-    }
+    code = Lumin.highlight(code);
     //Post result
     postMessage({code: code});
 }, false);

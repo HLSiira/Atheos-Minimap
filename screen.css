@@ -1,42 +1,88 @@
-/*
- * Copyright (c) Codiad & Andr3as, distributed
- * as-is and without warranty under the MIT License.
- * See http://opensource.org/licenses/MIT for more information.
- * This information must remain intact.
- */
-@import url("prism.css");
+/*////////////////////////////////////////////////////////////////////////////80
+// Atheos MiniMap
+//////////////////////////////////////////////////////////////////////////////80
+// Copyright (c) 2020 Liam Siira (liam@siira.io), distributed as-is and without
+// warranty under the MIT License. See [root]/license.md for more.
+// This information must remain intact.
+//////////////////////////////////////////////////////////////////////////////80
+// Copyright (c) 2013 Codiad & Anr3as
+// Source: https://github.com/Andr3as/Codiad-Minimap
+//////////////////////////////////////////////////////////////////////////////*/
 
-.minimap {
-    top: 35px;
-    right: 17px;
-    -moz-right: 17px;
-    -webkit-right: 10px;
-    bottom: 25px;
-    width: 12%;
-    z-index: 3;
-    position: absolute;
-    overflow-y: hidden;
-    overflow-x: hidden;
-    font-size: 10%;
+#editor-region {
+	position: relative;
 }
 
-.background {
-  background-color: rgba(192, 192, 192, 0.1);
-  position: absolute;
-  width: 100%;
+#minimap {
+	top: 35px;
+	right: 10px;
+	width: 12%;
+	max-height: 90%;
+	z-index: 3;
+	position: absolute;
+	overflow-y: hidden;
+	overflow-x: hidden;
+	font-size: 10%;
 }
 
-.minimap pre {
-    background: none;
-    border: none;
-    box-shadow: none;
-    cursor: pointer;
-    display: flex;
-    margin: 0;
-    overflow: hidden;
-    padding: 0;
-    -webkit-user-select: none;
-       -moz-user-select: none;
-        -ms-user-select: none;
-            user-select: none;
+#minimap .overlay {
+	background-color: transparent;
+	background-color: rgba(192, 192, 192, 0.1);
+	position: absolute;
+	width: 100%;
+	transition: margin-top linear 100ms;
+}
+
+#minimap pre {
+	cursor: pointer;
+	background: none;
+	border: none;
+	box-shadow: none;
+	display: flex;
+	margin: 0;
+	overflow: hidden;
+	padding: 0;
+	-webkit-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	user-select: none;
+}
+
+.ll-nam {
+	/*color: var(--blue, #0A84FF);*/
+}
+
+.ll-con {
+	color: var(--yellow, #FFD60A);
+}
+
+.ll-bol,
+.ll-num {
+	color: var(--green, #46A609);
+
+}
+
+.ll-str {
+	color: var(--aqua, #7FDBFF);
+}
+
+.ll-rex {
+	color: var(--orange, #F08D24);
+	/*color: #ef6c00*/
+}
+
+.ll-pct {
+	color: var(--orange, #F08D24);
+}
+
+.ll-brc {
+	color: var(--silver, #D5D9DD);
+}
+
+.ll-key {
+	color: var(--red, #FF483A);
+}
+
+.ll-com {
+	color: var(--fcMinor, #757577);
 }
