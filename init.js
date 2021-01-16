@@ -12,9 +12,9 @@
 (function(global) {
 
 	var atheos = global.atheos,
-		amplify = global.amplify;
+		carbon = global.carbon;
 
-	amplify.subscribe('system.loadExtra', () => atheos.MiniMap.init());
+	carbon.subscribe('system.loadExtra', () => atheos.MiniMap.init());
 
 	var self = null;
 
@@ -49,7 +49,7 @@
 			self.throttleScroll = throttle(self.moveOverlay, 100, self);
 
 			//document on change listener
-			amplify.subscribe("active.focus", function(path) {
+			carbon.subscribe("active.focus", function(path) {
 				self.active = atheos.editor.getActive();
 				if (!self.active) return;
 
@@ -63,7 +63,7 @@
 			});
 
 			//Reset Canvas
-			amplify.subscribe("active.close, active.removeAll", function(path) {
+			carbon.subscribe("active.close, active.removeAll", function(path) {
 				self.resetMap();
 			});
 
