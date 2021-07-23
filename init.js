@@ -9,16 +9,11 @@
 // Source: https://github.com/Andr3as/Codiad-Minimap
 //////////////////////////////////////////////////////////////////////////////80
 
-(function(global) {
 
-	var atheos = global.atheos,
-		carbon = global.carbon;
+(function() {
+	'use strict';
 
-	carbon.subscribe('system.loadExtra', () => atheos.MiniMap.init());
-
-	var self = null;
-
-	atheos.MiniMap = {
+	const self = {
 
 		path: atheos.path + 'plugins/Minimap/',
 		worker: null,
@@ -34,8 +29,7 @@
 		activePath: null,
 
 		init: function() {
-			self = this;
-			oX('#editor-top-bar').before(self.template);
+			oX('#EDITOR').prepend(self.template);
 
 			self.overlay = oX('#minimap .overlay');
 			self.code = oX('#minimap code');
@@ -128,4 +122,8 @@
 			self.height = 0;
 		}
 	};
-})(this);
+
+	carbon.subscribe('system.loadExtra', () => self.init());
+	atheos.MiniMap = self;
+
+})();
